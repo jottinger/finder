@@ -7,7 +7,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 import javax.persistence.*;
-import javax.xml.bind.annotation.XmlTransient;
+import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 
 import static com.redhat.osas.finder.util.SyndUtil.convertToString;
@@ -38,6 +38,7 @@ public class Entry extends FinderBaseObject implements Serializable {
     @Getter
     @Setter
     @ManyToOne
+    @NotNull
     Feed feed;
 
     /**
