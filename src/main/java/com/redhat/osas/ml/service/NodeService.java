@@ -106,4 +106,10 @@ public class NodeService {
         }
         return new ArrayList<Token>(hiddenIds.values());
     }
+
+    public List<Token> findAllOutputs() {
+        Query query=em.createQuery("select distinct n.to from Node n where n.layer=:layer");
+        query.setParameter("layer", Layer.HIDDEN);
+        return (List<Token>)query.getResultList();
+    }
 }

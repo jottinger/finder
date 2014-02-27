@@ -170,4 +170,8 @@ public class PerceptronService {
         }
         return queue;
     }
+
+    public Queue<Pair<Token, Double>> search(String corpus) {
+        return search(corpus, nodeService.findAllOutputs());
+    }
 }

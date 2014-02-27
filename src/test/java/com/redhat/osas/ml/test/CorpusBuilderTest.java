@@ -102,7 +102,7 @@ public class CorpusBuilderTest extends Arquillian {
         System.out.println("---------------------------------------------------------");
         System.out.println("*********************************************************");
         System.out.println("---------------------------------------------------------");
-        Queue<Pair<Token, Double>> queue=perceptronService.search("wWorld wBank", to);
+        Queue<Pair<Token, Double>> queue=perceptronService.search("wWorld wBank");
         while(!queue.isEmpty()) {
             System.out.println(queue.poll());
         }
