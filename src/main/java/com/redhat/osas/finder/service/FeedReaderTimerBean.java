@@ -27,7 +27,7 @@ public class FeedReaderTimerBean {
     @Resource(mappedName = "java:/queue/FeedReadQueue")
     private Queue queue;
 
-    @Schedule(minute = "*", hour = "*")
+    @Schedule(minute = "*")
     public void handleTimeout() {
         JMSProducer producer=context.createProducer();
         // log.severe("TRYING TO READ FEEDS");
@@ -41,5 +41,6 @@ public class FeedReaderTimerBean {
             TextMessage urlMessage=context.createTextMessage(feed.getUri());
             producer.send(queue, urlMessage);
         }
+        context.commit();
     }
 }

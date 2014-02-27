@@ -95,8 +95,7 @@ public class FeedService {
     }
 
     public void readFeed(String uri) {
-        FeedFetcherCache cache = HashMapFeedInfoCache.getInstance();
-        FeedFetcher feedFetcher = new HttpURLFeedFetcher(cache);
+        FeedFetcher feedFetcher = new HttpURLFeedFetcher();
         Feed feed = forceGetFeed(uri);
         try {
             log.severe("Trying to read " + uri);

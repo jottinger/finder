@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.redhat.osas.finder.util;
+package com.redhat.osas;
 
 import java.util.logging.Logger;
 
