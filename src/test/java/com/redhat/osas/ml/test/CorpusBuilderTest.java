@@ -1,13 +1,16 @@
 package com.redhat.osas.ml.test;
 
 import com.redhat.osas.Resources;
+import com.redhat.osas.util.MathFunctions;
 import com.redhat.osas.ml.model.Layer;
 import com.redhat.osas.ml.model.Node;
 import com.redhat.osas.ml.model.Token;
 import com.redhat.osas.ml.service.CorpusService;
 import com.redhat.osas.ml.service.NodeService;
 import com.redhat.osas.ml.service.PerceptronService;
+import com.redhat.osas.ml.service.TokenService;
 import com.redhat.osas.ml.service.data.PerceptronData;
+import com.redhat.osas.util.Pair;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.testng.Arquillian;
 import org.jboss.shrinkwrap.api.Archive;
@@ -22,6 +25,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.Query;
 import java.io.File;
 import java.util.List;
+import java.util.Queue;
 
 import static org.testng.Assert.assertNotNull;
 
@@ -34,8 +38,10 @@ public class CorpusBuilderTest extends Arquillian {
         Archive archive = ShrinkWrap.create(WebArchive.class, "test.war")
                 .addClasses(CorpusService.class, Token.class, Resources.class)
                 .addClasses(Node.class)
+                .addClasses(MathFunctions.class, Pair.class)
                 .addClasses(NodeService.class, Layer.class)
                 .addClasses(PerceptronData.class, PerceptronService.class)
+                .addClasses(TokenService.class)
                 .addAsResource("META-INF/test-persistence.xml", "META-INF/persistence.xml")
                 .addAsResource("stop_words.txt")
                 .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml")
@@ -49,6 +55,8 @@ public class CorpusBuilderTest extends Arquillian {
 
     @Inject
     CorpusService corpusService;
+    @Inject
+    TokenService tokenService;
     @Inject
     NodeService nodeService;
     @Inject
@@ -83,25 +91,26 @@ public class CorpusBuilderTest extends Arquillian {
 
         //perceptronService.train(from, to, corpusService.findToken("uWorldBank"));
 
-        for(int i=0;i<30;i++) {
+        for (int i = 0; i < 30; i++) {
             perceptronService.train(corpusService.getTokensForCorpus("wWorld wBank"),
-                    to, corpusService.findToken("uWorldBank"));
+                    to, tokenService.findToken("uWorldBank"));
             perceptronService.train(corpusService.getTokensForCorpus("wRiver wBank"),
-                    to, corpusService.findToken("uRiver"));
+                    to, tokenService.findToken("uRiver"));
             perceptronService.train(corpusService.getTokensForCorpus("wWorld"),
-                    to, corpusService.findToken("uEarth"));
-            System.out.println(perceptronService.getResults(corpusService.getTokensForCorpus("wBank"),
-                    to));
+                    to, tokenService.findToken("uEarth"));
         }
         System.out.println("---------------------------------------------------------");
         System.out.println("*********************************************************");
         System.out.println("---------------------------------------------------------");
-        System.out.println(perceptronService.getResults(corpusService.getTokensForCorpus("wWorld wBank"),
-                to));
-        System.out.println(perceptronService.getResults(corpusService.getTokensForCorpus("wRiver wBank"),
-                to));
-        System.out.println(perceptronService.getResults(corpusService.getTokensForCorpus("wBank"),
-                to));
+        Queue<Pair<Token, Double>> queue=perceptronService.search("wWorld wBank", to);
+        while(!queue.isEmpty()) {
+            System.out.println(queue.poll());
+        }
+        System.out.println(perceptronService.search("wWorld wBank", to));
+        System.out.println(perceptronService.mapResultsToTokens(perceptronService.getResults(corpusService.getTokensForCorpus("wRiver wBank"),
+                to)));
+        System.out.println(perceptronService.mapResultsToTokens(perceptronService.getResults(corpusService.getTokensForCorpus("wBank"),
+                to)));
         System.out.println("---------------------------------------------------------");
         System.out.println("*********************************************************");
         System.out.println("---------------------------------------------------------");

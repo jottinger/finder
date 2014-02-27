@@ -3,23 +3,21 @@ package com.redhat.osas.ml.service;
 import com.redhat.osas.ml.model.Layer;
 import com.redhat.osas.ml.model.Token;
 import com.redhat.osas.ml.service.data.PerceptronData;
+import com.redhat.osas.util.MathFunctions;
+import com.redhat.osas.util.Pair;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-/**
- * User: jottinge
- * Date: 2/26/14
- * Time: 4:01 PM
- */
 @Stateless
 public class PerceptronService {
     @Inject
-    public NodeService nodeService;
-    // uses weights of 0 except for target
+    NodeService nodeService;
+    @Inject
+    TokenService tokenService;
+    @Inject
+    CorpusService corpusService;
 
     protected void backPropagate(PerceptronData perceptronData, int target) {
         backPropagate(perceptronData, target, 0.5);
@@ -30,35 +28,34 @@ public class PerceptronService {
 
         // calculate errors for output layer
         Map<Integer, Double> outputDeltas = new HashMap<>();
-        for (Integer k : perceptronData.getUrlids()) {
-            error = (k == target ? 1.0 : 0) - perceptronData.getAo().get(k);
-            outputDeltas.put(k, dtanh(perceptronData.getAo().get(k)) * error);
+        for (Integer k : perceptronData.getOutputs()) {
+            error = (k == target ? 1.0 : 0) - perceptronData.ao(k);
+            outputDeltas.put(k, MathFunctions.dtanh(perceptronData.ao(k)) * error);
         }
 
         // calculate errors for hidden layer
         Map<Integer, Double> hiddenDeltas = new HashMap<>();
         for (Integer j : perceptronData.getHiddenids()) {
             error = 0.0;
-            for (Integer k : perceptronData.getUrlids()) {
-                error += outputDeltas.get(k) *
-                        perceptronData.getWo().get(j).get(k);
+            for (Integer k : perceptronData.getOutputs()) {
+                error += outputDeltas.get(k) * perceptronData.wo(j, k);
             }
-            hiddenDeltas.put(j, dtanh(perceptronData.getAh().get(j)) * error);
+            hiddenDeltas.put(j, MathFunctions.dtanh(perceptronData.ah(j) * error));
         }
 
         // update output weights
         for (Integer j : perceptronData.getHiddenids()) {
-            for (Integer k : perceptronData.getUrlids()) {
-                change = outputDeltas.get(k) * perceptronData.getAh().get(j);
-                perceptronData.getWo().get(j).put(k, perceptronData.getWo().get(j).get(k) + N * change);
+            for (Integer k : perceptronData.getOutputs()) {
+                change = outputDeltas.get(k) * perceptronData.ah(j);
+                perceptronData.wo(j).put(k, perceptronData.wo(j, k) + N * change);
             }
         }
 
         // update input weights
-        for (Integer i : perceptronData.getWordids()) {
+        for (Integer i : perceptronData.getInputs()) {
             for (Integer j : perceptronData.getHiddenids()) {
                 change = hiddenDeltas.get(j) * perceptronData.getAi().get(i);
-                perceptronData.getWi().get(i).put(j, perceptronData.getWi().get(i).get(j) + N * change);
+                perceptronData.wi(i).put(j, perceptronData.wi(i, j) + N * change);
             }
         }
     }
@@ -69,22 +66,18 @@ public class PerceptronService {
         for (Integer j : perceptronData.getAh().keySet()) {
             double sum = 0.0;
             for (Integer i : perceptronData.getAi().keySet()) {
-                sum = sum + perceptronData.getAi().get(i) * perceptronData.getWi().get(i).get(j);
+                sum = sum + perceptronData.ai(i) * perceptronData.wi(i, j);
             }
-            perceptronData.getAh().put(j, Math.tanh(sum));
+            perceptronData.getAh().put(j, MathFunctions.tanh(sum));
         }
 
         for (Integer k : perceptronData.getAo().keySet()) {
             double sum = 0.0;
             for (Integer j : perceptronData.getAh().keySet()) {
-                sum = sum + perceptronData.getAh().get(j) * perceptronData.getWo().get(j).get(k);
+                sum = sum + perceptronData.ah(j) * perceptronData.wo(j, k);
             }
-            perceptronData.getAo().put(k, Math.tanh(sum));
+            perceptronData.getAo().put(k, MathFunctions.tanh(sum));
         }
-    }
-
-    private static double dtanh(double y) {
-        return 1.0 - y * y;
     }
 
     public void train(List<Token> wordids, List<Token> urlids, Token selectedurl) {
@@ -96,15 +89,15 @@ public class PerceptronService {
     }
 
     private void updateDatabase(PerceptronData perceptronData) {
-        for(Integer i:perceptronData.getWordids()) {
-            for(Integer j:perceptronData.getHiddenids()) {
-                nodeService.setStrength(i,j,Layer.SOURCE,perceptronData.getWi().get(i).get(j));
+        for (Integer i : perceptronData.getInputs()) {
+            for (Integer j : perceptronData.getHiddenids()) {
+                nodeService.setStrength(i, j, Layer.SOURCE, perceptronData.wi(i, j));
             }
         }
 
-        for(Integer j:perceptronData.getHiddenids()) {
-            for(Integer k:perceptronData.getUrlids()) {
-                nodeService.setStrength(j,k,Layer.HIDDEN,perceptronData.getWo().get(j).get(k));
+        for (Integer j : perceptronData.getHiddenids()) {
+            for (Integer k : perceptronData.getOutputs()) {
+                nodeService.setStrength(j, k, Layer.HIDDEN, perceptronData.wo(j, k));
             }
         }
     }
@@ -117,13 +110,21 @@ public class PerceptronService {
         return perceptronData.getAo();
     }
 
+    public Map<Token, Double> mapResultsToTokens(Map<Integer, Double> perceptronResults) {
+        Map<Token, Double> results = new HashMap<>();
+        for (Integer k : perceptronResults.keySet()) {
+            results.put(tokenService.findToken(k), perceptronResults.get(k));
+        }
+        return results;
+    }
+
     private PerceptronData setupNetwork(List<Token> inputs, List<Token> outputs) {
         PerceptronData perceptronData = new PerceptronData();
         List<Token> hiddenIds = nodeService.getAllHiddenIds(inputs, outputs);
 
         for (Token input : inputs) {
             perceptronData.getAi().put(input.getId(), 1.0);
-            perceptronData.getWordids().add(input.getId());
+            perceptronData.getInputs().add(input.getId());
         }
 
         for (Token hidden : hiddenIds) {
@@ -133,7 +134,7 @@ public class PerceptronService {
 
         for (Token output : outputs) {
             perceptronData.getAo().put(output.getId(), 1.0);
-            perceptronData.getUrlids().add(output.getId());
+            perceptronData.getOutputs().add(output.getId());
         }
 
         for (Token input : inputs) {
@@ -152,5 +153,21 @@ public class PerceptronService {
             perceptronData.getWo().put(hidden.getId(), temp);
         }
         return perceptronData;
+    }
+
+    public Queue<Pair<Token, Double>> search(String corpus, List<Token> outputs) {
+        Queue<Pair<Token, Double>> queue = new PriorityQueue<>(5, new Comparator<Pair<Token, Double>>() {
+            @Override
+            public int compare(Pair<Token, Double> o1, Pair<Token, Double> o2) {
+                return Double.compare(o2.getV(), o1.getV());
+            }
+        });
+        Map<Integer, Double> results = getResults(corpusService.getTokensForCorpus(corpus),
+                outputs);
+        Map<Token, Double> mappedResults=mapResultsToTokens(results);
+        for(Map.Entry<Token, Double> entry:mappedResults.entrySet()) {
+            queue.add(new Pair<>(entry.getKey(), entry.getValue()));
+        }
+        return queue;
     }
 }

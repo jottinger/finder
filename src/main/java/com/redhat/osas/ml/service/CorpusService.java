@@ -13,8 +13,6 @@ import javax.annotation.PostConstruct;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
-import javax.persistence.Query;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
@@ -24,6 +22,8 @@ import java.util.*;
 public class CorpusService {
     @Inject
     EntityManager em;
+    @Inject
+    TokenService tokenService;
 
     static Set<String> stopWords;
 
@@ -79,25 +79,15 @@ public class CorpusService {
 
     private List<Token> convertTextToTokens(List<String> tokenTexts) {
         List<Token> tokens = new ArrayList<>();
-        Query query = em.createNamedQuery("Token.findByWord");
         for (String tokenText : tokenTexts) {
-            query.setParameter("word", tokenText);
             Token token;
-            try {
-                token = (Token) query.getSingleResult();
-            } catch (NoResultException nre) {
-                token = new Token();
-                token.setWord(tokenText);
-                em.persist(token);
+
+            if ((token = tokenService.findToken(tokenText)) == null) {
+                token = tokenService.saveToken(tokenText);
             }
             tokens.add(token);
         }
         return tokens;
     }
 
-    public Token findToken(String corpus) throws NoResultException {
-        Query query = em.createNamedQuery("Token.findByWord");
-        query.setParameter("word", corpus.trim().toLowerCase());
-        return (Token) query.getSingleResult();
-    }
 }

@@ -20,6 +20,8 @@ public class NodeService {
     EntityManager em;
     @Inject
     CorpusService corpusService;
+    @Inject
+    TokenService tokenService;
 
     public double getStrength(Token from, Token to, Layer layer) {
         Query query = em.createNamedQuery("Node.getStrength");
@@ -54,16 +56,13 @@ public class NodeService {
         }
     }
 
-    private Token getTokenById(Integer id) {
-        return em.find(Token.class, id);
-    }
-
     public void setStrength(Integer fromId, Integer toId, Layer source, double strength) {
-        setStrength(getTokenById(fromId), getTokenById(toId), source, strength);
+        setStrength(tokenService.findToken(fromId),
+                tokenService.findToken(toId), source, strength);
     }
 
     public void generateHiddenNode(List<Token> wordids, List<Token> urls) {
-        //if(wordids.size()<3) {
+        //if(inputs.size()<3) {
         //    // too small to bother
         //    return;
         //}
@@ -73,23 +72,15 @@ public class NodeService {
             sb.append(separator).append(String.valueOf(token.getId()));
             separator = ":";
         }
-        try {
-            Query query = em.createNamedQuery("Token.findByWord");
-            query.setParameter("word", sb.toString());
-            query.getSingleResult();
-        } catch (NoResultException nre) {
+        if (tokenService.findToken(sb.toString()) == null) {
             // not there? Well, let's create it and set up the network.
-            Token hidden = new Token();
-            hidden.setWord(sb.toString());
-            em.persist(hidden);
+            Token hidden = tokenService.saveToken(sb.toString());
             for (Token from : wordids) {
                 setStrength(from, hidden, Layer.SOURCE, 1.0 / wordids.size());
             }
             for (Token to : urls) {
                 setStrength(hidden, to, Layer.HIDDEN, 0.1);
             }
-        } catch (Throwable t) {
-            t.printStackTrace();
         }
     }
 
@@ -115,5 +106,4 @@ public class NodeService {
         }
         return new ArrayList<Token>(hiddenIds.values());
     }
-
 }
