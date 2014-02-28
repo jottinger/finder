@@ -13,6 +13,14 @@ public class TokenService {
     @Inject
     EntityManager em;
 
+    public Token findToken(String corpus, boolean force) {
+        Token token=findToken(corpus);
+        if(force && token==null) {
+            token=saveToken(corpus);
+        }
+        return token;
+    }
+
     public Token findToken(String corpus) {
         try {
             Query query = em.createNamedQuery("Token.findByWord");

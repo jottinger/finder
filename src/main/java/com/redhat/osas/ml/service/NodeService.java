@@ -61,24 +61,24 @@ public class NodeService {
                 tokenService.findToken(toId), source, strength);
     }
 
-    public void generateHiddenNode(List<Token> wordids, List<Token> urls) {
+    public void generateHiddenNodes(List<Token> inputs, List<Token> outputs) {
         //if(inputs.size()<3) {
         //    // too small to bother
         //    return;
         //}
         StringBuilder sb = new StringBuilder();
         String separator = "";
-        for (Token token : wordids) {
+        for (Token token : inputs) {
             sb.append(separator).append(String.valueOf(token.getId()));
             separator = ":";
         }
         if (tokenService.findToken(sb.toString()) == null) {
             // not there? Well, let's create it and set up the network.
             Token hidden = tokenService.saveToken(sb.toString());
-            for (Token from : wordids) {
-                setStrength(from, hidden, Layer.SOURCE, 1.0 / wordids.size());
+            for (Token from : inputs) {
+                setStrength(from, hidden, Layer.SOURCE, 1.0 / inputs.size());
             }
-            for (Token to : urls) {
+            for (Token to : outputs) {
                 setStrength(hidden, to, Layer.HIDDEN, 0.1);
             }
         }

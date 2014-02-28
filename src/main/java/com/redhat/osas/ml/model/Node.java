@@ -6,9 +6,10 @@ import lombok.ToString;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
+import java.io.PrintWriter;
 import java.io.Serializable;
+import java.io.StringWriter;
 
-@ToString
 @Entity
 @Cacheable
 @NamedQueries(
@@ -41,4 +42,12 @@ public class Node implements Serializable {
     @Getter
     @NotNull
     Layer layer;
+
+    public String toString() {
+        StringWriter sw=new StringWriter();
+        PrintWriter out=new PrintWriter(sw);
+        out.printf("Node:[id=%4d, from=%s, to=%s, strength=%15f, layer=%s]",
+                getId(), getFrom(), getTo(), getStrength(), getLayer());
+        return sw.toString();
+    }
 }

@@ -8,11 +8,12 @@ import lombok.ToString;
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import java.io.PrintWriter;
 import java.io.Serializable;
+import java.io.StringWriter;
 
 @Entity
 @Cacheable
-@ToString
 @NoArgsConstructor
 @NamedQueries(
         {
@@ -31,4 +32,11 @@ public class Token implements Serializable {
     @NotNull
     @Column(unique = true)
     String word;
+
+    public String toString() {
+        StringWriter sw=new StringWriter();
+        PrintWriter out=new PrintWriter(sw);
+        out.printf("Token[id=%4d, word=%15s]", getId(), getWord());
+        return sw.toString();
+    }
 }

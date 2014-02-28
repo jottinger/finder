@@ -1,7 +1,6 @@
 package com.redhat.osas.ml.test;
 
 import com.redhat.osas.Resources;
-import com.redhat.osas.util.MathFunctions;
 import com.redhat.osas.ml.model.Layer;
 import com.redhat.osas.ml.model.Node;
 import com.redhat.osas.ml.model.Token;
@@ -10,6 +9,7 @@ import com.redhat.osas.ml.service.NodeService;
 import com.redhat.osas.ml.service.PerceptronService;
 import com.redhat.osas.ml.service.TokenService;
 import com.redhat.osas.ml.service.data.PerceptronData;
+import com.redhat.osas.util.MathFunctions;
 import com.redhat.osas.util.Pair;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.testng.Arquillian;
@@ -24,6 +24,7 @@ import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
 import java.io.File;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Queue;
 
@@ -36,12 +37,8 @@ public class CorpusBuilderTest extends Arquillian {
                 loadPomFromFile("pom.xml").importRuntimeDependencies()
                 .resolve().withTransitivity().asFile();
         Archive archive = ShrinkWrap.create(WebArchive.class, "test.war")
-                .addClasses(CorpusService.class, Token.class, Resources.class)
-                .addClasses(Node.class)
-                .addClasses(MathFunctions.class, Pair.class)
-                .addClasses(NodeService.class, Layer.class)
-                .addClasses(PerceptronData.class, PerceptronService.class)
-                .addClasses(TokenService.class)
+                .addClasses(CorpusService.class, Token.class, Resources.class, Node.class, MathFunctions.class, Pair.class)
+                .addClasses(NodeService.class, Layer.class, PerceptronData.class, PerceptronService.class, TokenService.class)
                 .addAsResource("META-INF/test-persistence.xml", "META-INF/persistence.xml")
                 .addAsResource("stop_words.txt")
                 .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml")
@@ -71,55 +68,50 @@ public class CorpusBuilderTest extends Arquillian {
 
     @Test
     public void testParsing() {
-        String corpus = "Now is the time for all good men to come to the aid of their country.";
-        System.out.println(corpusService.getTokensForCorpus(corpus));
-
-        List<Token> from = corpusService.getTokensForCorpus("wWorld wRiver wBank");
-        from = corpusService.getTokensForCorpus("wWorld wBank");
+        //String corpus = "Now is the time for all good men to come to the aid of their country.";
+        //System.out.println(corpusService.getTokensForCorpus(corpus));
+        List<Token> from = corpusService.getTokensForCorpus("wWorld wBank wRiver");
         List<Token> to = corpusService.getTokensForCorpus("uWorldBank uRiver uEarth");
-        nodeService.generateHiddenNode(from, to);
-        //showAll("from Token");
-        //showAll("from Node");
+        nodeService.generateHiddenNodes(from, to);
+        for (int i = 31; i > 0; i--) {
+            perceptronService.train(corpusService.getTokensForCorpus("wWorld wBank"), to, tokenService.findToken("uWorldBank"));
+            perceptronService.train(corpusService.getTokensForCorpus("wRiver wBank"), to, tokenService.findToken("uRiver"));
+            perceptronService.train(corpusService.getTokensForCorpus("wWorld"), to, tokenService.findToken("uEarth"));
+        }
+        //for (int i = 0; i < 30; i++) {
+        //    perceptronService.train("wWorld wBank", "uWorldBank uRiver uEarth", "uWorldBank");
+        //    perceptronService.train("wRiver wBank", "uWorldBank uRiver uEarth", "uRiver");
+        //    perceptronService.train("wWorld", "uWorldBank uRiver uEarth", "uEarth");
+        //}
 
-        //System.out.println("---------------------------------------------------------");
-        //System.out.println("*********************************************************");
-        //System.out.println("---------------------------------------------------------");
         //System.out.println(perceptronService.getResults(from, to));
-        //System.out.println("---------------------------------------------------------");
-        //System.out.println("*********************************************************");
-        //System.out.println("---------------------------------------------------------");
-
-        //perceptronService.train(from, to, corpusService.findToken("uWorldBank"));
-
-        for (int i = 0; i < 30; i++) {
-            perceptronService.train(corpusService.getTokensForCorpus("wWorld wBank"),
-                    to, tokenService.findToken("uWorldBank"));
-            perceptronService.train(corpusService.getTokensForCorpus("wRiver wBank"),
-                    to, tokenService.findToken("uRiver"));
-            perceptronService.train(corpusService.getTokensForCorpus("wWorld"),
-                    to, tokenService.findToken("uEarth"));
-        }
-        System.out.println("---------------------------------------------------------");
-        System.out.println("*********************************************************");
-        System.out.println("---------------------------------------------------------");
-        Queue<Pair<Token, Double>> queue=perceptronService.search("wWorld wBank");
-        while(!queue.isEmpty()) {
-            System.out.println(queue.poll());
-        }
-        System.out.println(perceptronService.search("wWorld wBank", to));
+        Queue<Pair<Token, Double>> queue = query("wWorld wBank", true);
+        queue = query("wRiver wBank", true);
+        queue = query("wBank", true);
+/*
         System.out.println(perceptronService.mapResultsToTokens(perceptronService.getResults(corpusService.getTokensForCorpus("wRiver wBank"),
                 to)));
         System.out.println(perceptronService.mapResultsToTokens(perceptronService.getResults(corpusService.getTokensForCorpus("wBank"),
                 to)));
-        System.out.println("---------------------------------------------------------");
-        System.out.println("*********************************************************");
-        System.out.println("---------------------------------------------------------");
-
+  */
         showAll("from Token");
         showAll("from Node");
-
     }
 
+    private Queue<Pair<Token, Double>> query(String corpus, boolean display) {
+        Queue<Pair<Token, Double>> queue = perceptronService.search(corpus);
+        if (display) {
+            System.out.println("Query: " + corpus);
+            Iterator<Pair<Token, Double>> e = queue.iterator();
+            while (e.hasNext()) {
+                Pair<Token, Double> d = e.next();
+                System.out.println(d);
+            }
+        }
+        return queue;
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
     private void showAll(String queryText) {
         Query query = em.createQuery(queryText);
         System.out.println("---------------------------------------------------------");
