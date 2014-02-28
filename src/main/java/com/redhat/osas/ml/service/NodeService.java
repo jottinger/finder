@@ -32,7 +32,7 @@ public class NodeService {
         try {
             Node result = (Node) query.getSingleResult();
             strength = result.getStrength();
-        } catch (NoResultException nre) {
+        } catch (NoResultException ignored) {
         }
         return strength;
     }
@@ -87,29 +87,33 @@ public class NodeService {
     public List<Token> getAllHiddenIds(List<Token> from, List<Token> to) {
         Map<Integer, Token> hiddenIds = new HashMap<>();
         for (Token token : from) {
-            Query query = em.createQuery("select n from Node n where n.from=:from and n.layer=:layer");
+            Query query = em.createNamedQuery("Node.byFromAndLayer");
             query.setParameter("from", token);
             query.setParameter("layer", Layer.SOURCE);
-            List<Node> hiddenIdList = query.getResultList();
+            @SuppressWarnings("unchecked")
+            List<Node> hiddenIdList = (List<Node>) query.getResultList();
             for (Node hiddenToken : hiddenIdList) {
                 hiddenIds.put(hiddenToken.getTo().getId(), hiddenToken.getTo());
             }
         }
         for (Token token : to) {
-            Query query = em.createQuery("select n from Node n where n.to=:to and n.layer=:layer");
+            Query query = em.createNamedQuery("Node.byToAndLayer");
             query.setParameter("to", token);
             query.setParameter("layer", Layer.HIDDEN);
-            List<Node> hiddenIdList = query.getResultList();
+            @SuppressWarnings("unchecked")
+            List<Node> hiddenIdList = (List<Node>) query.getResultList();
             for (Node hiddenToken : hiddenIdList) {
                 hiddenIds.put(hiddenToken.getFrom().getId(), hiddenToken.getFrom());
             }
         }
-        return new ArrayList<Token>(hiddenIds.values());
+        return new ArrayList<>(hiddenIds.values());
     }
 
+
     public List<Token> findAllOutputs() {
-        Query query=em.createQuery("select distinct n.to from Node n where n.layer=:layer");
+        Query query = em.createNamedQuery("Node.getAllOutputsByLayer");
         query.setParameter("layer", Layer.HIDDEN);
-        return (List<Token>)query.getResultList();
+        //noinspection unchecked
+        return (List<Token>) query.getResultList();
     }
 }

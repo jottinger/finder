@@ -7,8 +7,8 @@ import lombok.Setter;
 import lombok.ToString;
 
 import javax.persistence.*;
+import javax.xml.bind.annotation.XmlRootElement;
 import java.util.Date;
-import java.util.Set;
 
 @Entity
 @NoArgsConstructor
@@ -18,6 +18,7 @@ import java.util.Set;
         @NamedQuery(name = "Feed.findAll", query = "select f from Feed f"),
 })
 @ToString
+@XmlRootElement
 public class Feed extends FinderBaseObject {
     private static final long serialVersionUID = 7759440105124773514L;
     @Temporal(TemporalType.TIMESTAMP)

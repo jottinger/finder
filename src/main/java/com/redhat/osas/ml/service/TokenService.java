@@ -10,24 +10,39 @@ import javax.persistence.Query;
 
 @Stateless
 public class TokenService {
+    @SuppressWarnings("CdiInjectionPointsInspection")
     @Inject
     EntityManager em;
 
     public Token findToken(String corpus, boolean force) {
-        Token token=findToken(corpus);
-        if(force && token==null) {
-            token=saveToken(corpus);
+        Token token = findToken(corpus);
+        if (force && token == null) {
+            token = saveToken(corpus);
         }
         return token;
     }
 
     public Token findToken(String corpus) {
+        String normalizedCorpus = corpus.trim().toLowerCase();
+
+        Query query = em.createNamedQuery("Token.findByHashCode");
         try {
-            Query query = em.createNamedQuery("Token.findByWord");
-            query.setParameter("word", corpus.trim().toLowerCase());
-            return (Token) query.getSingleResult();
+            query.setParameter("hashCode", normalizedCorpus.hashCode());
+            Token token = (Token) query.getSingleResult();
+            if (!token.getWord().equals(normalizedCorpus)) {
+                // we do this mostly because we want to make sure we don't have any hash code
+                // collisions. How likely is this? Um... not very.
+                throw new NoResultException("no match");
+            }
+            return token;
         } catch (NoResultException nre) {
-            return null;
+            try {
+                query = em.createNamedQuery("Token.findByWord");
+                query.setParameter("word", normalizedCorpus);
+                return (Token) query.getSingleResult();
+            } catch (NoResultException nre2) {
+                return null;
+            }
         }
     }
 

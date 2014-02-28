@@ -8,6 +8,8 @@ import lombok.ToString;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
 import java.io.Serializable;
 
 import static com.redhat.osas.finder.util.SyndUtil.convertToString;
@@ -22,6 +24,7 @@ import static com.redhat.osas.finder.util.SyndUtil.convertToString;
         @NamedQuery(name = "Entry.clearOldEntries", query = "delete from Entry e where e.feed=:feed and e.lastRead <> :now"),
 })
 @ToString(exclude = "feed")
+@XmlRootElement
 public class Entry extends FinderBaseObject implements Serializable {
     /**
      *
@@ -39,6 +42,7 @@ public class Entry extends FinderBaseObject implements Serializable {
     @Setter
     @ManyToOne
     @NotNull
+    @XmlTransient
     Feed feed;
 
     /**
