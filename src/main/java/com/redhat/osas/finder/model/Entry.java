@@ -11,6 +11,7 @@ import javax.validation.constraints.NotNull;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 import java.io.Serializable;
+import java.util.Date;
 
 import static com.redhat.osas.finder.util.SyndUtil.convertToString;
 
@@ -38,6 +39,10 @@ public class Entry extends FinderBaseObject implements Serializable {
     @Getter
     @Setter
     String description;
+    @Temporal(TemporalType.TIMESTAMP)
+    @Getter
+    @Setter
+    Date created;
     @Getter
     @Setter
     @ManyToOne
@@ -54,5 +59,6 @@ public class Entry extends FinderBaseObject implements Serializable {
         setUri(syndEntry.getUri());
         setDescription(convertToString(syndEntry.getDescription()));
         setContent(convertToString(syndEntry.getContents()));
+        setCreated(syndEntry.getPublishedDate());
     }
 }

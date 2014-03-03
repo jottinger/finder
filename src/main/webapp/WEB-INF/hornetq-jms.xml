@@ -3,9 +3,11 @@
         <jms-destinations>
             <jms-queue name="FeedReadQueue">
                 <entry name="/queue/FeedReadQueue"/>
+                <durable>false</durable>
             </jms-queue>
             <jms-queue name="FeedQueue">
                 <entry name="/queue/FeedQueue"/>
+                <durable>false</durable>
             </jms-queue>
         </jms-destinations>
     </hornetq-server>

@@ -5,8 +5,6 @@ import com.redhat.osas.finder.model.Feed;
 import com.sun.syndication.feed.synd.SyndEntry;
 import com.sun.syndication.feed.synd.SyndFeed;
 import org.rometools.fetcher.FeedFetcher;
-import org.rometools.fetcher.impl.FeedFetcherCache;
-import org.rometools.fetcher.impl.HashMapFeedInfoCache;
 import org.rometools.fetcher.impl.HttpURLFeedFetcher;
 
 import javax.ejb.Stateless;
@@ -60,6 +58,7 @@ public class FeedService {
             } catch (NoResultException nre) {
                 // no Entry? Create one.
                 entry = new Entry(feed, syndEntry);
+                log.severe("Wrote " + entry);
                 em.persist(entry);
             }
             // set the lastread to a known value.

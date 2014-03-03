@@ -6,8 +6,6 @@ import com.redhat.osas.finder.service.FeedService;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -22,27 +20,25 @@ public class FeedResourceRESTService {
     FeedService feedService;
 
     @GET
-    @Produces(MediaType.APPLICATION_JSON)
     public List<Feed> getFeeds() {
         //return feedService.listAllFeeds();
         log.severe("getFeeds() called");
-        return new ArrayList<>();
+        return feedService.listAllFeeds();
+        //return new ArrayList<>();
     }
 
     @PUT
     @Path("{uri}")
-    @Produces(MediaType.APPLICATION_JSON)
     public Feed addFeed(@PathParam("uri") String uri) {
         //return feedService.forceGetFeed(uri);
-        log.severe("addFeed(" + uri + ") called");
-        return new Feed();
+        log.severe("addFeed(\"" + uri + "\") called");
+        return feedService.forceGetFeed(uri);
     }
 
     @DELETE
     @Path("{uri}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Feed removeFeed(@PathParam("uri") String uri) {
-        log.severe("removeFeed(" + uri + ") called");
+    public Feed removeFeed(@PathParam("id") int id) {
+        log.severe("removeFeed(" + id + ") called");
         return new Feed();
     }
 }
