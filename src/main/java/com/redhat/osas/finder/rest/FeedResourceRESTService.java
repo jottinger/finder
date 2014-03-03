@@ -1,38 +1,48 @@
 package com.redhat.osas.finder.rest;
 
-import java.util.List;
-import java.util.logging.Logger;
-
-import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-
 import com.redhat.osas.finder.model.Feed;
 import com.redhat.osas.finder.service.FeedService;
 
-@Path("/feeds")
+import javax.enterprise.context.RequestScoped;
+import javax.inject.Inject;
+import javax.ws.rs.*;
+import javax.ws.rs.core.MediaType;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Logger;
+
 @RequestScoped
+@Produces("application/json")
+@Path("/feed")
 public class FeedResourceRESTService {
-	@Inject
-	Logger log;
-	
-	@Inject
-	FeedService feedService;
+    @Inject
+    Logger log;
 
-	@GET
-	@Produces(MediaType.APPLICATION_JSON)
-	public List<Feed> listAllFeeds() {
-		return feedService.listAllFeeds();
-	}
+    @Inject
+    FeedService feedService;
 
-	@GET
-	@Path("/uri:.*")
-	@Produces(MediaType.APPLICATION_JSON)
-	public Feed addFeed(String uri) {
-		return feedService.forceGetFeed(uri);
-	}
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<Feed> getFeeds() {
+        //return feedService.listAllFeeds();
+        log.severe("getFeeds() called");
+        return new ArrayList<>();
+    }
 
+    @PUT
+    @Path("{uri}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Feed addFeed(@PathParam("uri") String uri) {
+        //return feedService.forceGetFeed(uri);
+        log.severe("addFeed(" + uri + ") called");
+        return new Feed();
+    }
+
+    @DELETE
+    @Path("{uri}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Feed removeFeed(@PathParam("uri") String uri) {
+        log.severe("removeFeed(" + uri + ") called");
+        return new Feed();
+    }
 }
