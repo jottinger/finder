@@ -14,7 +14,9 @@ import javax.persistence.NoResultException;
 import javax.persistence.Query;
 import java.net.URL;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -23,16 +25,19 @@ public class FeedService {
     @Inject
     EntityManager em;
     @Inject
+    ClassificationService classificationService;
+    @Inject
     Logger log;
 
-    public void updateFeed(SyndFeed syndFeed) {
+    public Set<Entry> updateFeed(SyndFeed syndFeed) {
         Feed feed = forceGetFeed(syndFeed.getUri());
         feed.setActive(true);
-        updateFeed(feed, syndFeed);
+        return updateFeed(feed, syndFeed);
     }
 
-    public void updateFeed(Feed feed, SyndFeed syndFeed) {
+    public Set<Entry> updateFeed(Feed feed, SyndFeed syndFeed) {
         Query query;
+        Set<Entry> newEntries = new HashSet<>();
         // this is the timestamp for the entries and feed.
         Date now = new Date();
 
@@ -60,16 +65,23 @@ public class FeedService {
                 entry = new Entry(feed, syndEntry);
                 log.severe("Wrote " + entry);
                 em.persist(entry);
+                newEntries.add(entry);
             }
             // set the lastread to a known value.
             entry.setLastRead(now);
         }
         // now let's clear out the entries that don't match the feed's
         // timestamp...
-        query = em.createNamedQuery("Entry.clearOldEntries");
+        query = em.createNamedQuery("Entry.getOldEntries");
         query.setParameter("feed", feed);
         query.setParameter("now", now);
-        query.executeUpdate();
+        @SuppressWarnings("unchecked")
+        List<Entry> oldEntries = (List<Entry>) query.getResultList();
+        for (Entry oldEntry : oldEntries) {
+            classificationService.removeForEntry(oldEntry);
+            em.remove(oldEntry);
+        }
+        return newEntries;
     }
 
     public Feed forceGetFeed(String uri) {
@@ -93,18 +105,20 @@ public class FeedService {
 
     }
 
-    public void readFeed(String uri) {
+    public Set<Entry> readFeed(String uri) {
         FeedFetcher feedFetcher = new HttpURLFeedFetcher();
         Feed feed = forceGetFeed(uri);
+        Set<Entry> newEntries = new HashSet<>();
         try {
             log.severe("Trying to read " + uri);
             URL url = new URL(uri);
-            updateFeed(feed, feedFetcher.retrieveFeed(url));
+            newEntries = updateFeed(feed, feedFetcher.retrieveFeed(url));
         } catch (Exception exception) {
             log.log(Level.SEVERE, "deactivating feed " + feed.getUri(),
                     exception);
             feed.setActive(false);
         }
+        return newEntries;
     }
 
     @SuppressWarnings("unchecked")

@@ -18,6 +18,11 @@ import java.util.Date;
 @NoArgsConstructor
 @ToString
 @XmlRootElement
+@NamedQueries(
+        {
+                @NamedQuery(name = "User.findAll", query = "select u from User u order by u.lastActivity")
+        }
+)
 public class User implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

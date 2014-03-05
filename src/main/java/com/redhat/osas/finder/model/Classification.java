@@ -1,9 +1,8 @@
 package com.redhat.osas.finder.model;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import com.redhat.osas.ml.model.Token;
+import lombok.*;
+import lombok.experimental.Builder;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
@@ -12,6 +11,14 @@ import java.io.Serializable;
 @Entity
 @ToString
 @NoArgsConstructor
+@Builder
+@AllArgsConstructor
+@NamedQueries(
+        {
+                @NamedQuery(name = "Classification.deleteForEntry", query = "delete from Classification c where c.entry=:entry"),
+                @NamedQuery(name = "Classification.findUnclassifiedEntries", query = "select c from Classification c where c.autoClassification=null"),
+        }
+)
 public class Classification implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,9 +37,14 @@ public class Classification implements Serializable {
     User user;
     @Getter
     @Setter
-    String autoClassification;
+    @ManyToOne
+    Token autoClassification;
     @Getter
     @Setter
-    String userClassification;
-
+    @ManyToOne
+    Token userClassification;
+    @Getter
+    @Setter
+    @Column(length = 1024)
+    String scoresJSON;
 }

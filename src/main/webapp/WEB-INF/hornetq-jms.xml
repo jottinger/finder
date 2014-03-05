@@ -5,8 +5,12 @@
                 <entry name="/queue/FeedReadQueue"/>
                 <durable>false</durable>
             </jms-queue>
-            <jms-queue name="FeedQueue">
-                <entry name="/queue/FeedQueue"/>
+            <jms-queue name="ClassificationQueue">
+                <entry name="/queue/ClassificationQueue"/>
+                <durable>false</durable>
+            </jms-queue>
+            <jms-queue name="ClassificationTriggerQueue">
+                <entry name="/queue/ClassificationTriggerQueue"/>
                 <durable>false</durable>
             </jms-queue>
         </jms-destinations>

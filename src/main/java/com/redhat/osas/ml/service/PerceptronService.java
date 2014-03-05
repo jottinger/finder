@@ -156,22 +156,8 @@ public class PerceptronService {
     }
 
     public Queue<Pair<Token, Double>> search(String corpus, List<Token> outputs) {
-        Queue<Pair<Token, Double>> queue = new PriorityQueue<>(5, new Comparator<Pair<Token, Double>>() {
-            @Override
-            public int compare(Pair<Token, Double> o1, Pair<Token, Double> o2) {
-                return Double.compare(o2.getV(), o1.getV());
-            }
-        });
-
         List<Token> corpora = corpusService.getTokensForCorpus(corpus);
-        //System.out.println(corpora);
-        Map<Integer, Double> results = getResults(corpora, outputs);
-        //System.out.println(results);
-        Map<Token, Double> mappedResults = mapResultsToTokens(results);
-        for (Map.Entry<Token, Double> entry : mappedResults.entrySet()) {
-            queue.add(new Pair<>(entry.getKey(), entry.getValue()));
-        }
-        return queue;
+        return search(corpora, outputs);
     }
 
     public Queue<Pair<Token, Double>> search(String corpus) {
@@ -183,8 +169,8 @@ public class PerceptronService {
         PerceptronData perceptronData = setupNetwork(inputs, outputs);
 
         feedForward(perceptronData);
-        Map<Integer, Double> targets=new HashMap<>();
-        for(Token output:outputs) {
+        Map<Integer, Double> targets = new HashMap<>();
+        for (Token output : outputs) {
             targets.put(output.getId(), 0.0);
         }
         targets.put(target.getId(), 1.0);
@@ -194,8 +180,26 @@ public class PerceptronService {
     }
 
     public void train(String corpora, String targetCorpora, String target) {
-        List<Token> inputs=corpusService.getTokensForCorpus(corpora);
-        List<Token> targets=corpusService.getTokensForCorpus(targetCorpora);
+        List<Token> inputs = corpusService.getTokensForCorpus(corpora);
+        List<Token> targets = corpusService.getTokensForCorpus(targetCorpora);
         train(inputs, targets, tokenService.findToken(target, true));
+    }
+
+    public Queue<Pair<Token, Double>> search(List<Token> corpora, List<Token> targets) {
+        Queue<Pair<Token, Double>> queue = new PriorityQueue<>(5, new Comparator<Pair<Token, Double>>() {
+            @Override
+            public int compare(Pair<Token, Double> o1, Pair<Token, Double> o2) {
+                return Double.compare(o2.getV(), o1.getV());
+            }
+        });
+
+        //System.out.println(corpora);
+        Map<Integer, Double> results = getResults(corpora, targets);
+        //System.out.println(results);
+        Map<Token, Double> mappedResults = mapResultsToTokens(results);
+        for (Map.Entry<Token, Double> entry : mappedResults.entrySet()) {
+            queue.add(new Pair<>(entry.getKey(), entry.getValue()));
+        }
+        return queue;
     }
 }

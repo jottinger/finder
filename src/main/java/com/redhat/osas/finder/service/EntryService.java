@@ -17,14 +17,15 @@ public class EntryService {
     Logger log;
 
     public List<Entry> getEntries() {
-        Query query = em.createQuery("select e from Entry e order by e.created");
+        Query query = em.createNamedQuery("Entry.allOrdered");
 
         //noinspection unchecked
         return (List<Entry>) query.getResultList();
     }
 
     public List<Entry> getEntries(int page) {
-        Query query = em.createQuery("select e from Entry e order by e.created");
+        Query query = em.createNamedQuery("Entry.allOrdered");
+
         query.setFirstResult(page * 20);
         query.setMaxResults(page * 21);
 
