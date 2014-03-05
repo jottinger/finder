@@ -2,13 +2,14 @@ package com.redhat.osas.finder.rest;
 
 import com.redhat.osas.finder.model.Entry;
 import com.redhat.osas.finder.service.EntryService;
+import com.redhat.osas.ml.model.Token;
+import com.redhat.osas.ml.service.CorpusService;
+import com.redhat.osas.ml.service.PerceptronService;
+import com.redhat.osas.ml.service.TokenService;
 
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -24,6 +25,13 @@ public class EntryResourceRESTService {
     @Inject
     EntryService entryService;
     @Inject
+    PerceptronService perceptronService;
+    @Inject
+    CorpusService corpusService;
+    @Inject
+    TokenService tokenService;
+
+    @Inject
     Logger log;
 
     @GET
@@ -36,6 +44,19 @@ public class EntryResourceRESTService {
     public List<Entry> getEntries(@PathParam("page") int page) {
         log.severe("getEntries(" + page + ") called");
         return entryService.getEntries(page);
+    }
+
+    @PUT
+    @Path("/train/{id}/{classification}")
+    public String train(@PathParam("id") int id, @PathParam("classification") String classification) {
+        classification = classification.trim().toLowerCase();
+        if (!"wGood wNeutral wBad".contains(classification)) {
+            return "UNKNOWN CLASSIFICATION";
+        }
+        List<Token> targets = corpusService.getTokensForCorpus("wGood wNeutral wBad");
+        List<Token> corpora = entryService.getTokensForEntry(id);
+        perceptronService.train(corpora, targets, tokenService.findToken(classification));
+        return "SUCCESS";
     }
 
 }

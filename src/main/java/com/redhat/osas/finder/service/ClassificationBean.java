@@ -15,7 +15,10 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.ObjectMessage;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
 import java.util.logging.Logger;
 
 @MessageDriven(name = "ClassificationBean", activationConfig = {
@@ -41,16 +44,7 @@ public class ClassificationBean implements MessageListener {
                 Classification classification = (Classification) objectMessage.getObject();
                 List<Token> targets = corpusService.getTokensForCorpus("wGood wNeutral wBad");
                 Entry entry = classification.getEntry();
-                StringBuilder unstemmedText = new StringBuilder(entry.getTitle().toLowerCase().trim());
-                for (String tag : entry.getTags()) {
-                    unstemmedText.append(" ").append(tag);
-                }
-                List<Token> unstemmedTokens = corpusService.getTokensForCorpus(unstemmedText.toString(), false);
-                List<Token> descriptionTokens = corpusService.getTokensForCorpus(entry.getDescription(), true);
-                List<Token> stemmedTokens = corpusService.getTokensForCorpus(entry.getContent(), true);
-                List<Token> corpus = new ArrayList<>(unstemmedTokens);
-                corpus.addAll(descriptionTokens);
-                corpus.addAll(stemmedTokens);
+                List<Token> corpus = entryService.getTokensForEntry(entry);
                 Queue<Pair<Token, Double>> results = perceptronService.search(corpus, targets);
                 Map<String, Double> jsonData = new HashMap<>();
                 while (!results.isEmpty()) {
@@ -65,7 +59,7 @@ public class ClassificationBean implements MessageListener {
                 jsonObject.putAll(jsonData);
                 classification.setScoresJSON(jsonObject.toJSONString());
                 // TODO need to sync with database now...
-
+                classificationService.update(classification);
             }
         } catch (JMSException jmsException) {
             jmsException.printStackTrace();

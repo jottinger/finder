@@ -1,14 +1,12 @@
 package com.redhat.osas.finder.service;
 
 import com.redhat.osas.finder.model.Entry;
-import com.redhat.osas.finder.model.User;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.ActivationConfigProperty;
 import javax.ejb.MessageDriven;
 import javax.inject.Inject;
 import javax.jms.*;
-import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -49,11 +47,8 @@ public class FeedReaderBean implements MessageListener {
                     // this is a url to read. Get the new entries, if any
                     Set<Entry> newEntries = feedService.readFeed(text);
                     // now for each user, create a new Classification
-                    List<User> users = userService.findAll();
                     for (Entry entry : newEntries) {
-                        for (User user : users) {
-                            classificationService.save(entry, user);
-                        }
+                        classificationService.save(entry);
                     }
                 }
             } catch (JMSException e) {

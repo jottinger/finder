@@ -2,7 +2,6 @@ package com.redhat.osas.finder.service;
 
 import com.redhat.osas.finder.model.Classification;
 import com.redhat.osas.finder.model.Entry;
-import com.redhat.osas.finder.model.User;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
@@ -21,9 +20,8 @@ public class ClassificationService {
         query.executeUpdate();
     }
 
-    public Classification save(Entry entry, User user) {
+    public Classification save(Entry entry) {
         Classification classification = Classification.builder()
-                .user(user)
                 .entry(entry)
                 .build();
         em.persist(classification);
@@ -34,5 +32,9 @@ public class ClassificationService {
         Query query = em.createNamedQuery("Classification.findUnclassifiedEntries");
         //noinspection unchecked
         return (List<Classification>) query.getResultList();
+    }
+
+    public void update(Classification classification) {
+        em.merge(classification);
     }
 }

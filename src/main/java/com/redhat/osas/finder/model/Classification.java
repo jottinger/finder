@@ -30,11 +30,6 @@ public class Classification implements Serializable {
     @Setter
     @NotNull
     Entry entry;
-    @ManyToOne
-    @Getter
-    @Setter
-    @NotNull
-    User user;
     @Getter
     @Setter
     @ManyToOne
